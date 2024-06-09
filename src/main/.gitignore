@@ -1,0 +1,14 @@
+# IntelliJ IDEA project files
+.idea/
+
+# Maven target directory
+target/
+
+# Maven dependency-reduced POM file
+dependency-reduced-pom.xml
+
+# IntelliJ project file
+gKillStats.iml
+
+# Git ignore file
+.gitignore
