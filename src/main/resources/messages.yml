@@ -1,0 +1,30 @@
+messages:
+  kill-message: "&c%killer% (%killer_kills% ⚔) &fhas killed &b%victim% (%victim_deaths% ☠) &fwith &7%weapon%"
+  non-player-death-message: "&c%player% (%player_deaths% ☠) &fhas died."
+  stat-message:
+    - "&r"
+    - "&x&d&d&a&c&0&0&lg&x&e&1&b&5&0&9&lK&x&e&5&b&e&1&2&li&x&e&8&c&8&1&c&ll&x&e&c&d&1&2&5&ll&x&f&0&d&a&2&e&lS&x&f&4&e&3&3&7&lt&x&f&7&e&d&4&1&la&x&f&b&f&6&4&a&lt&x&f&f&f&f&5&3&ls &8» &e%player% &fstatistics:"
+    - " &8- &fKills: %kills%"
+    - " &8- &fDeaths: %deaths%"
+    - " &8- &fK/D: %kd%"
+    - "&r"
+  too-many-args: "&fYou use too many arguments, please use the command similar to: &c/gkillstats stats [player]"
+
+  reset-all: "&aAll players stats have been reset."
+  reset-player: "&aPlayer %player% stats have been reset."
+
+  reload-success: "&aThe plugin files have been successfully reloaded!"
+  no-permission: "&cYou don't have permission to do this command."
+  help-menu:
+    - "&r"
+    - "&x&d&d&a&c&0&0&lg&x&e&1&b&5&0&9&lK&x&e&5&b&e&1&2&li&x&e&8&c&8&1&c&ll&x&e&c&d&1&2&5&ll&x&f&0&d&a&2&e&lS&x&f&4&e&3&3&7&lt&x&f&7&e&d&4&1&la&x&f&b&f&6&4&a&lt&x&f&f&f&f&5&3&ls &8» &fAvailable commands:"
+    - "&r"
+    - "&8&l• &e/gkillstats stats [player] &8- &7Look at the player or your own stats."
+    - "&8&l• &e/gkillstats reset <player/all> &8- &7Reset the statistics of all or one player."
+    - "&8&l• &e/gkillstats reload &8- &7Reload the plugin config file."
+    - "&r"
+    - "&fIf u need some help join our Discord server!"
+    - "&x&7&2&8&9&d&ahttps://discord.gg/f5E4wCwG7g"
+    - "&r"
+
+messages-version: "1"

@@ -1,0 +1,21 @@
+name: gKillStats
+version: '${project.version}'
+main: hu.kitsoo.gkillstats.GKillStats
+tab-completer: hu.kitsoo.gkillstats.util.TabCompleter
+api-version: '1.16'
+softdepend: [PlaceholderAPI]
+author: "kitsoo_"
+commands:
+  gkillstats:
+    description: 'List the command arguments'
+    aliases: []
+    subcommands:
+      reload:
+        description: 'Reload the plugin files.'
+        usage: '/gwhitelist reload'
+      stats:
+        description: 'Look at your own or others statistics.'
+        usage: '/gwhitelist stats [player]'
+      reset:
+        description: 'Reset everyone or somebody statistics'
+        usage: '/gwhitelist reset <*/player>'
