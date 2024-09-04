@@ -31,13 +31,13 @@ public class GKillStatsCommand implements CommandExecutor {
         guildCommands.put("reset", new ResetCommand(plugin, configUtil));
         guildCommands.put("stats", new StatsCommand(plugin, configUtil));
 
-        commands.put("guild", guildCommands);
+        commands.put("gkillstats", guildCommands);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            List<String> helpMenu = configUtil.getMessages().getStringList("help-menu");
+            List<String> helpMenu = configUtil.getMessages().getStringList("messages.help-menu");
             for (String line : helpMenu) {
                 sender.sendMessage(ChatUtil.colorizeHex(line));
             }
@@ -52,7 +52,7 @@ public class GKillStatsCommand implements CommandExecutor {
             if (executor != null) {
                 return executor.onCommand(sender, command, label, args);
             } else {
-                List<String> helpMenu = configUtil.getMessages().getStringList("help-menu");
+                List<String> helpMenu = configUtil.getMessages().getStringList("messages.help-menu");
                 for (String line : helpMenu) {
                     sender.sendMessage(ChatUtil.colorizeHex(line));
                 }

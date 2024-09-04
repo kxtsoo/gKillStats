@@ -8,7 +8,7 @@ messages:
     - " &8- &fDeaths: %deaths%"
     - " &8- &fK/D: %kd%"
     - "&r"
-  too-many-args: "&fYou use too many arguments, please use the command similar to: &c/gkillstats stats [player]"
+  too-many-args: "&fIncorrect command usage. For help, type: /gkillstats"
 
   reset-all: "&aAll players stats have been reset."
   reset-player: "&aPlayer %player% stats have been reset."

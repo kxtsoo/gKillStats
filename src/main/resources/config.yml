@@ -1,20 +1,29 @@
 prefix: "&x&d&d&a&c&0&0&lg&x&e&1&b&5&0&9&lK&x&e&5&b&e&1&2&li&x&e&8&c&8&1&c&ll&x&e&c&d&1&2&5&ll&x&f&0&d&a&2&e&lS&x&f&4&e&3&3&7&lt&x&f&7&e&d&4&1&la&x&f&b&f&6&4&a&lt&x&f&f&f&f&5&3&ls &8» "
 
 #  driver: sqlite / mysql
-storage:
+database:
+  #  Drivers: sqlite or mysql
   driver: "sqlite"
-  mysql:
-    host: "localhost"
-    port: 3306
-    database: "whitelist_database"
-    username: "username"
-    password: "password"
+
+  # MySQL config
+  host: "localhost"
+  port: 3306
+  name: "database_name"
+  username: "database_username"
+  password: "database_password"
+  pool:
+    maximumPoolSize: 10
+    minimumIdle: 5
+    connectionTimeout: 30000
+    maxLifetime: 1800000
+    idleTimeout: 600000
 
 # A lightning bolt strikes the place of the dead player and does no damage.
 death-lightning: true
 
-# If you kill someone before the cooldown expires you will not get the kill, this helps to prevent the kill from farming.
-kill-cooldown-seconds: 30
+kill-limits:
+  time-period-seconds: 1800  # 30 minutes
+  max-kills: 3
 
 # if u wanna disable this, use: kill-reward: []
 kill-reward:

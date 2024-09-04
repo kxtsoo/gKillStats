@@ -3,7 +3,6 @@ package hu.kitsoo.gkillstats.commands;
 import hu.kitsoo.gkillstats.GKillStats;
 import hu.kitsoo.gkillstats.util.ChatUtil;
 import hu.kitsoo.gkillstats.util.ConfigUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -29,7 +28,7 @@ public class ReloadCommand implements CommandExecutor, Listener {
             return true;
         }
 
-        List<String> helpMenuList = configUtil.getMessages().getStringList("help-menu");
+        List<String> helpMenuList = configUtil.getMessages().getStringList("messages.help-menu");
         StringBuilder helpMenuBuilder = new StringBuilder();
 
         for (String line : helpMenuList) {
@@ -54,8 +53,6 @@ public class ReloadCommand implements CommandExecutor, Listener {
         try {
             configUtil.reloadConfig();
             sender.sendMessage(ChatUtil.colorizeHex(configUtil.getMessageWithPrefix("messages.reload-success")));
-            Bukkit.getLogger().severe("The plugin successfully reloaded!");
-
         } catch (Exception e) {
             e.printStackTrace();
         }

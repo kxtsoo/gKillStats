@@ -11,22 +11,26 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.logging.Level;
 
 public final class GKillStats extends JavaPlugin {
 
+    private static GKillStats instance;
     private static GKillStatsAPI api;
     private ConfigUtil configUtil;
 
     @Override
     public void onEnable() {
-        getConfig().options().copyDefaults(true);
-        saveDefaultConfig();
-
+        instance = this;
         configUtil = new ConfigUtil(this);
         configUtil.setupConfig();
 
+        File logsDir = new File(getDataFolder(), "logs");
+        if (!logsDir.exists()) {
+            logsDir.mkdirs();
+        }
 
         System.out.println(ChatColor.GREEN + "The plugin successfully enabled.");
         System.out.println(ChatColor.GREEN + "Plugin developed by Glowing Studios. https://discord.gg/esxwNC4DmZ");
@@ -37,7 +41,7 @@ public final class GKillStats extends JavaPlugin {
             getLogger().log(Level.SEVERE, "Failed to initialize database", e);
         }
 
-        api = new GKillStatsAPIImpl();
+        api = new GKillStatsAPIImpl(this);
 
         getServer().getPluginManager().registerEvents(new DeathEvent(this, configUtil), this);
         getCommand("gkillstats").setTabCompleter(new TabComplete(this));
@@ -45,7 +49,7 @@ public final class GKillStats extends JavaPlugin {
         GKillStatsCommand commandExecutor = new GKillStatsCommand(this, configUtil);
         getCommand("gkillstats").setExecutor(commandExecutor);
 
-        getLogger().info(ChatColor.YELLOW + "Selected database type: ");
+        getLogger().info("Selected database type: " + DatabaseManager.getDatabaseType());
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlaceholderAPISupport(this).register();
@@ -63,5 +67,8 @@ public final class GKillStats extends JavaPlugin {
 
     public static GKillStatsAPI getAPI() {
         return api;
+    }
+    public static GKillStats getInstance() {
+        return instance;
     }
 }
