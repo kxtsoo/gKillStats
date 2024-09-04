@@ -1,18 +1,25 @@
 package hu.kitsoo.gkillstats.events;
 
 import hu.kitsoo.gkillstats.GKillStats;
+import hu.kitsoo.gkillstats.api.GKillStatsAPI;
+import hu.kitsoo.gkillstats.api.GKillStatsAPIImpl;
 import hu.kitsoo.gkillstats.database.DatabaseManager;
 import hu.kitsoo.gkillstats.util.ChatUtil;
 import hu.kitsoo.gkillstats.util.ConfigUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -20,115 +27,158 @@ public class DeathEvent implements Listener {
 
     private final GKillStats plugin;
     private final KillstreakHandler killstreakHandler;
-    private final KillCooldownManager cooldownManager;
     private final ConfigUtil configUtil;
+    private final GKillStatsAPI gKillStatsAPI;
 
     public DeathEvent(GKillStats plugin, ConfigUtil configUtil) {
         this.plugin = plugin;
         this.configUtil = configUtil;
         this.killstreakHandler = new KillstreakHandler(plugin, configUtil);
-        this.cooldownManager = new KillCooldownManager(configUtil.getConfig().getInt("kill-cooldown-seconds", 60));
+        this.gKillStatsAPI = new GKillStatsAPIImpl(plugin);
     }
 
     @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) throws SQLException {
+    public void onPlayerDeath(PlayerDeathEvent event) {
         Player victim = event.getEntity();
         Player killer = victim.getKiller();
 
-        if ((killer instanceof Player && killer.equals(victim)) || killer == null) {
-            DatabaseManager.updatePlayerStats(victim.getName(), 0, 1);
-            DatabaseManager.updateKillstreak(victim.getName(), 0);
-
-            int victimDeaths = DatabaseManager.getPlayerDeaths(victim.getName());
-            String deathMessage = ChatUtil.colorizeHex(configUtil.getMessageWithPrefix("non-player-death-message")
-                    .replace("%player%", victim.getName())
-                    .replace("%player_deaths%", String.valueOf(victimDeaths)));
-
-            String deathLightning = configUtil.getConfig().getString("death-lightning", "true");
-
-            if (deathLightning.equals("true")) {
-                victim.getWorld().strikeLightningEffect(victim.getLocation());
-            }
-
-            event.setDeathMessage(deathMessage);
-            handleDeathLoss(victim);
+        if (killer == null || killer.equals(victim)) {
+            handleNonPlayerDeath(event, victim);
             return;
         }
 
-        if (!cooldownManager.canPlayerKill(killer, victim)) {
+        if (!gKillStatsAPI.isValidKill(killer.getName(), victim.getName())) {
             event.setDeathMessage(null);
             return;
         }
 
-        String killedPlayerName = victim.getName();
-        String killerName = killer.getName();
-        ItemStack killerWeapon = killer.getInventory().getItemInMainHand();
+        handlePlayerDeath(event, victim, killer);
+    }
 
-        String killMessage = ChatUtil.colorizeHex(configUtil.getConfig().getString("kill-message")
-                .replace("%killer%", killerName)
-                .replace("%victim%", killedPlayerName));
+    private void handleNonPlayerDeath(PlayerDeathEvent event, Player victim) {
+        try {
+            DatabaseManager.updatePlayerStats(victim.getName(), 0, 1);
+            DatabaseManager.updateKillstreak(victim.getName(), 0);
 
-        if (killerWeapon.getType() != Material.AIR) {
-            String weaponName = (killerWeapon.hasItemMeta() && killerWeapon.getItemMeta().hasDisplayName()) ?
-                    killerWeapon.getItemMeta().getDisplayName() : killerWeapon.getType().name();
-            killMessage = killMessage.replace("%weapon%", weaponName);
-        } else {
-            killMessage = killMessage.replace("%weapon%", "AIR");
+            int victimDeaths = DatabaseManager.getPlayerDeaths(victim.getName());
+            String deathMessage = ChatUtil.colorizeHex(configUtil.getMessageWithPrefix("messages.non-player-death-message")
+                    .replace("%player%", victim.getName())
+                    .replace("%player_deaths%", String.valueOf(victimDeaths)));
+
+            event.setDeathMessage(deathMessage);
+            if (configUtil.getConfig().getBoolean("death-lightning", true)) {
+                victim.getWorld().strikeLightningEffect(victim.getLocation());
+            }
+
+            handleDeathLoss(victim);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Bukkit.getLogger().severe("Error updating non-player death stats: " + e.getMessage());
         }
+    }
 
-        DatabaseManager.updatePlayerStats(killerName, 1, 0);
-        DatabaseManager.updatePlayerStats(killedPlayerName, 0, 1);
+    private void handlePlayerDeath(PlayerDeathEvent event, Player victim, Player killer) {
+        try {
+            DatabaseManager.updatePlayerStats(killer.getName(), 1, 0);
+            DatabaseManager.updatePlayerStats(victim.getName(), 0, 1);
 
-        int killerKills = DatabaseManager.getPlayerKills(killerName);
-        int victimDeaths = DatabaseManager.getPlayerDeaths(killedPlayerName);
+            int killerKills = DatabaseManager.getPlayerKills(killer.getName());
+            int victimDeaths = DatabaseManager.getPlayerDeaths(victim.getName());
 
-        killMessage = killMessage.replace("%killer_kills%", String.valueOf(killerKills));
-        killMessage = killMessage.replace("%victim_deaths%", String.valueOf(victimDeaths));
+            logKillEvent(killer, victim);
 
-        String deathLightning = configUtil.getConfig().getString("death-lightning", "true");
+            String killMessageTemplate = configUtil.getMessageWithPrefix("messages.kill-message");
+            String weaponName = killer.getInventory().getItemInMainHand().getType().name();
 
-        if (deathLightning.equals("true")) {
-            victim.getWorld().strikeLightningEffect(victim.getLocation());
+            String killMessage = ChatUtil.colorizeHex(killMessageTemplate
+                    .replace("%killer%", killer.getName())
+                    .replace("%victim%", victim.getName())
+                    .replace("%weapon%", weaponName)
+                    .replace("%killer_kills%", String.valueOf(killerKills))
+                    .replace("%victim_deaths%", String.valueOf(victimDeaths)));
+
+            event.setDeathMessage(killMessage);
+            if (configUtil.getConfig().getBoolean("death-lightning", true)) {
+                victim.getWorld().strikeLightningEffect(victim.getLocation());
+            }
+
+            handleDeathLoss(victim);
+            handleKillRewards(killer);
+            handleKillstreak(killer);
+            handlePlayerKill(killer, victim, event);
+            killstreakHandler.resetKillstreak(victim);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Bukkit.getLogger().severe("Error handling player death: " + e.getMessage());
         }
+    }
 
-        event.setDeathMessage(killMessage);
-        handleDeathLoss(victim);
-        handleKillRewards(killer);
-        handleKillstreak(killer);
-        handlePlayerKill(killer, victim, event);
-        killstreakHandler.resetKillstreak(victim);
-        cooldownManager.updateKillCooldown(killer, victim);
+    private void logKillEvent(Player killer, Player victim) throws SQLException {
+        long currentTime = System.currentTimeMillis();
+        String formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(currentTime));
+        String logFileName = plugin.getDataFolder().getAbsolutePath() + "/logs/" + new SimpleDateFormat("yyyy-MM-dd").format(new Date(currentTime)) + ".log";
 
+        String logEntry = formattedDate + " - " +
+                killer.getName() + " killed " +
+                victim.getName() + " (" +
+                victim.getWorld().getName() + ", " +
+                victim.getLocation().getBlockX() + ", " +
+                victim.getLocation().getBlockY() + ", " +
+                victim.getLocation().getBlockZ() + ")";
+
+        try {
+            File logFile = new File(logFileName);
+            logFile.getParentFile().mkdirs();
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))) {
+                writer.write(logEntry);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleKillRewards(Player killer) {
         List<String> killRewards = configUtil.getConfig().getStringList("kill-reward");
 
-        for (String rewardCommand : killRewards) {
-            String processedCommand = rewardCommand.replace("%player%", killer.getName());
-            plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processedCommand);
-        }
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (String rewardCommand : killRewards) {
+                    String processedCommand = rewardCommand.replace("%player%", killer.getName());
+                    plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processedCommand);
+                }
+            }
+        }.runTask(plugin);
     }
 
     private void handleDeathLoss(Player victim) {
         List<String> deathLoss = configUtil.getConfig().getStringList("death-loss");
 
-        for (String rewardCommand : deathLoss) {
-            String processedCommand = rewardCommand.replace("%player%", victim.getName());
-            plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processedCommand);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (String rewardCommand : deathLoss) {
+                    String processedCommand = rewardCommand.replace("%player%", victim.getName());
+                    plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processedCommand);
+                }
+            }
+        }.runTask(plugin);
+    }
+
+    private void handleKillstreak(Player killer) {
+        try {
+            killstreakHandler.handleKill(killer);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Bukkit.getLogger().severe("Error handling killstreak: " + e.getMessage());
         }
     }
 
-    private void handleKillstreak(Player killer) throws SQLException {
-        killstreakHandler.handleKill(killer);
-    }
-
     private void handlePlayerKill(Player killer, Player victim, PlayerDeathEvent event) {
-
         List<String> commands = configUtil.getConfig().getStringList("death-commands");
         if (commands != null && !commands.isEmpty()) {
-            Random random = new Random();
-            String commandTemplate = commands.get(random.nextInt(commands.size()));
+            String commandTemplate = commands.get(new Random().nextInt(commands.size()));
 
             String command = commandTemplate
                     .replace("%killer%", killer.getName())
@@ -138,8 +188,12 @@ public class DeathEvent implements Listener {
                     .replace("%y%", String.valueOf(victim.getLocation().getBlockY()))
                     .replace("%z%", String.valueOf(victim.getLocation().getBlockZ()));
 
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+                }
+            }.runTask(plugin);
         }
     }
-
 }

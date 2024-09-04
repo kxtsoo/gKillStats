@@ -30,21 +30,17 @@ public class StatsCommand implements CommandExecutor, Listener {
             return true;
         }
 
-        if (args.length == 0) {
-            return true;
-        }
-
-        String subCommand = args[0].toLowerCase();
+        String subCommand = (args.length > 0) ? args[0].toLowerCase() : "";
 
         if (subCommand.equals("stats")) {
-            if (args.length > 2) {
-                sender.sendMessage(ChatUtil.colorizeHex(configUtil.getMessageWithPrefix("messages.too-many-args")));
+            String playerName = (args.length > 1) ? args[1] : (sender instanceof Player ? ((Player) sender).getName() : "");
+            if (playerName.isEmpty()) {
+                sender.sendMessage(ChatUtil.colorizeHex(configUtil.getMessageWithPrefix("messages.player-not-found")));
                 return true;
             }
-            String playerName = (args.length > 1) ? args[1] : (sender instanceof Player ? ((Player) sender).getName() : "");
             sendPlayerStats(sender, playerName);
         } else {
-            sender.sendMessage(ChatUtil.colorizeHex(configUtil.getMessageWithPrefix("messages.too-many-args")));
+            sender.sendMessage(ChatUtil.colorizeHex(configUtil.getMessageWithPrefix("messages.unknown-command")));
         }
 
         return true;
@@ -55,25 +51,26 @@ public class StatsCommand implements CommandExecutor, Listener {
             int kills = DatabaseManager.getPlayerKills(playerName);
             int deaths = DatabaseManager.getPlayerDeaths(playerName);
 
-            List<String> helpMenuList = configUtil.getMessages().getStringList("stat-message");
-            StringBuilder helpMenuBuilder = new StringBuilder();
+            List<String> statMessageList = configUtil.getMessages().getStringList("messages.stat-message");
+            StringBuilder statMessageBuilder = new StringBuilder();
 
-            for (String line : helpMenuList) {
-                helpMenuBuilder.append(line).append("\n");
+            for (String line : statMessageList) {
+                statMessageBuilder.append(line).append("\n");
             }
 
-            String helpMenu = helpMenuBuilder.toString().trim();
-            helpMenu = ChatUtil.colorizeHex(helpMenu);
+            String statMessage = statMessageBuilder.toString().trim();
+            statMessage = ChatUtil.colorizeHex(statMessage);
 
             double kdRatio = deaths == 0 ? kills : (double) kills / deaths;
 
-            helpMenu = helpMenu.replace("%player%", playerName);
-            helpMenu = helpMenu.replace("%kills%", String.valueOf(kills));
-            helpMenu = helpMenu.replace("%deaths%", String.valueOf(deaths));
-            helpMenu = helpMenu.replace("%kd%", String.format("%.2f", kdRatio));
+            statMessage = statMessage.replace("%player%", playerName);
+            statMessage = statMessage.replace("%kills%", String.valueOf(kills));
+            statMessage = statMessage.replace("%deaths%", String.valueOf(deaths));
+            statMessage = statMessage.replace("%kd%", String.format("%.2f", kdRatio));
 
-            sender.sendMessage(helpMenu);
+            sender.sendMessage(statMessage);
         } catch (SQLException e) {
+            sender.sendMessage(ChatUtil.colorizeHex(configUtil.getMessageWithPrefix("messages.database-error")));
             e.printStackTrace();
         }
     }

@@ -72,7 +72,7 @@ public class ConfigUtil {
     }
 
     public String getMessageWithPrefix(String key) {
-        String prefix = config.getString("prefix", "&7[&aGuild&7] &r");
+        String prefix = config.getString("prefix", "&x&d&d&a&c&0&0&lg&x&e&1&b&5&0&9&lK&x&e&5&b&e&1&2&li&x&e&8&c&8&1&c&ll&x&e&c&d&1&2&5&ll&x&f&0&d&a&2&e&lS&x&f&4&e&3&3&7&lt&x&f&7&e&d&4&1&la&x&f&b&f&6&4&a&lt&x&f&f&f&f&5&3&ls &8» ");
         String message = messages.getString(key, "");
         if (message.contains("%prefix%")) {
             message = message.replace("%prefix%", prefix);

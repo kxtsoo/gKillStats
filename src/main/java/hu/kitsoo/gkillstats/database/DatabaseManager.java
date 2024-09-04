@@ -25,12 +25,6 @@ public class DatabaseManager {
         database.createDatabaseTables();
     }
 
-    public static void close() throws SQLException {
-        if (database != null) {
-            database.close();
-        }
-    }
-
     public static void updatePlayerStats(String playerName, int kills, int deaths) throws SQLException {
         database.updatePlayerStats(playerName, kills, deaths);
     }
@@ -73,5 +67,15 @@ public class DatabaseManager {
 
     public static int getKillstreak(String playerName) throws SQLException {
         return database.getKillstreak(playerName);
+    }
+
+    public static void close() throws SQLException {
+        if (database != null) {
+            database.close();
+        }
+    }
+
+    public static String getDatabaseType() {
+        return database instanceof MySQLDatabaseManager ? "mysql" : "sqlite";
     }
 }
